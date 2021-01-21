@@ -95,7 +95,7 @@ app.route("/api/guzelsozler")
           });
         });
 
-        app.get("/", function(req,res){
+app.get("/", function(req,res){
           GuzelSoz.find({}, function(err, gelenSozler){
             res.render("anasayfa", {sozler : gelenSozler});
           });
@@ -146,7 +146,7 @@ app.route("/api/guzelsozler")
 //     if(!err)
 //       res.send("Kayıt başarıyla güncellendi.");
 //     else
-//       res.send(err);
+//       res.send(err); 
 //   });
 //
 // });
