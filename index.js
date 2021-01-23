@@ -2,6 +2,7 @@ const express =require("express");
 const bodyParser=require("body-parser");
 const mongoose =require("mongoose");
 const app =express();
+const https=require("https");
 app.use(express.static(__dirname + "/dosyalar"));
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended :true}));
@@ -42,7 +43,7 @@ app.route("/api/guzelsoz/:id")
       var icerikGelen   = req.body.icerik;
       GuzelSoz.update({_id : req.params.id} , {kategori : kategoriGelen, icerik : icerikGelen}, {overwrite: true}, function(err){
         if(!err)
-          res.send("Kayıt başarıyla güncellendi.");
+          res.send({ sonuc:"Kayıt başarıyla güncellendi."});
         else
           res.send(err);
       });
@@ -50,18 +51,23 @@ app.route("/api/guzelsoz/:id")
     .patch(function(req, res){
       GuzelSoz.update({_id : req.params.id} , {$set : req.body}, function(err){
         if(!err)
-          res.send("Kayıt başarıyla güncellendi.");
+          res.send({ sonuc:"Kayıt başarıyla güncellendi."});
         else
           res.send(err);
       })
     })
     .delete(function(req, res){
+      var sifre=req.body.sifre;
+      if(sifre=="parola1234"){
       GuzelSoz.deleteOne({_id : req.params.id}, function(err){
         if(!err)
-          res.send("Kayıt başarıyla silindi.");
+          res.send({ sonuc:"Kayıt başarıyla silindi."});
         else
           res.send(err);
-      })
+      });
+    } else{  res.send({sonuc:"Şifre Hatalı..."});
+    }
+
     });
 
 
@@ -81,18 +87,23 @@ app.route("/api/guzelsozler")
            });
            guzelSoz.save(function(err){
               if(!err)
-                res.send("Kayıt başarıyla oluşturuldu.");
+                res.send({ sonuc:"Kayıt başarıyla oluşturuldu." } );
               else
                 res.send(err);
            });
         })
         .delete(function(req, res){
-          GuzelSoz.deleteMany({}, function(err){
-            if(!err)
-              res.send("Tüm kayıtlar başarıyla silindi.");
-            else
-              res.send(err);
-          });
+          var sifre=req.body.sifre;
+          if(sifre=="parola1234"){
+            GuzelSoz.deleteMany({}, function(err){
+              if(!err)
+                res.send({ sonuc:"Tüm kayıtlar başarıyla silindi."});
+              else
+                res.send(err);
+            });
+          }else{
+            res.send({sonuc:"Şifre Hatalı..."});
+          }
         });
 
 app.get("/", function(req,res){
@@ -100,6 +111,34 @@ app.get("/", function(req,res){
             res.render("anasayfa", {sozler : gelenSozler});
           });
         });
+
+app.get("/admin" , function(req,res){
+
+    var link="https://efs-guzelsozler.herokuapp.com/api/guzelsozler";
+    https.get(link , function(response){
+      response.on("data", function(gelenGuzelSozler){
+        // gelenGuzelSozler -> byte türünde gelmişti.
+        var guzelSozler = JSON.parse(gelenGuzelSozler);
+        res.render("admin",{sozler:guzelSozler});
+      })
+    });
+});
+
+app.post("/kayit-sil", function(req, res){
+    var id = req.body._id;
+    var link = "https://efs-guzelsozler.herokuapp.com/api/guzelsoz/"+id;
+    var secenekler = {
+      method : 'DELETE'
+    };
+    https.get(link, secenekler , function(response){
+        response.on("data", function(gelenData){
+          var sonuc = JSON.parse(gelenData);
+          res.send(sonuc)
+        })
+    });
+});
+
+
 
 
 // app.get("/api/guzelsozler/:id", function(req,res){
@@ -146,7 +185,7 @@ app.get("/", function(req,res){
 //     if(!err)
 //       res.send("Kayıt başarıyla güncellendi.");
 //     else
-//       res.send(err); 
+//       res.send(err);
 //   });
 //
 // });
